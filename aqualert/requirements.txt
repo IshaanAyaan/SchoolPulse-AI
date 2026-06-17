@@ -1,0 +1,24 @@
+# Aqualert runtime + dev dependencies (all lightweight, all justified).
+#
+# numpy      - vectorized math for OLS regression / array handling
+# scipy      - Student's t-distribution (CI math) and linregress slope SE
+# pyyaml     - load/validate config.yaml
+# paho-mqtt  - MQTT(TLS) publisher and server-side subscriber
+# flask      - tiny server-side read API (JSON only, no dashboard)
+# pytest     - test runner
+#
+# gpiozero / RPi.GPIO are ONLY required on the Raspberry Pi for the real
+# HC-SR04 driver. They are intentionally NOT hard dependencies so the whole
+# system runs in simulation mode on a laptop with zero hardware. They are
+# imported lazily inside HCSR04Sensor and listed here commented-out.
+
+numpy>=1.26
+scipy>=1.11
+pyyaml>=6.0
+paho-mqtt>=1.6,<3
+flask>=3.0
+pytest>=8.0
+
+# --- Raspberry Pi only (install on the Pi): ---
+# gpiozero>=2.0
+# RPi.GPIO>=0.7

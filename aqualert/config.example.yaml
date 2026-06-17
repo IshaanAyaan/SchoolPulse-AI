@@ -1,0 +1,98 @@
+# =============================================================================
+# Aqualert configuration template.
+#
+# Copy to config.yaml and edit. NEVER put real broker credentials here:
+# they are read from environment variables (see telemetry section).
+# Validation runs on load and FAILS LOUDLY on bad values.
+# =============================================================================
+
+config_version: "1.0.0"
+firmware_version: "1.0.0"
+device_id: "aqualert-dev-001"
+
+# ----------------------------------------------------------------------------
+# Sensor selection
+#   mode: "real" -> HC-SR04 via gpiozero/RPi.GPIO on the Pi
+#         "sim"  -> SimulatedSensor, no hardware required
+#   sim_scenario: normal | leak_slow | leak_fast | sensor_fault
+# ----------------------------------------------------------------------------
+sensor:
+  mode: "sim"
+  sim_scenario: "normal"
+  sim_seed: 1234            # makes simulated runs reproducible; null for random
+
+# ----------------------------------------------------------------------------
+# GPIO wiring (BCM numbering). Matches the finalized HC-SR04 wiring:
+#   VCC  -> Pin 2  (5V)
+#   GND  -> Pin 6  (GND)
+#   Trig -> GPIO23 (Pin 16), 3.3V drive, direct
+#   Echo -> GPIO24 (Pin 18), through a 1k/2k divider (5V -> 3.3V)
+# Pi GPIO is NOT 5V tolerant; the divider on Echo is mandatory in hardware.
+# ----------------------------------------------------------------------------
+gpio:
+  trig_pin: 23
+  echo_pin: 24
+  echo_timeout_s: 0.04      # ~6.8 m round trip; abort the ping if no echo
+
+# ----------------------------------------------------------------------------
+# Geometry. Level L = mount_height_cm - measured_distance_cm.
+# Rising water => shorter distance => higher level.
+# full_line_cm is the learned "tank full" level (see scripts/calibrate.py).
+# ----------------------------------------------------------------------------
+geometry:
+  mount_height_cm: 30.0     # sensor face to tank bottom (empty-tank distance)
+  full_line_cm: 18.0        # level at the fill-valve setpoint (tank full)
+  cross_section_cm2: 900.0  # tank water-surface area, for waste estimate
+
+# ----------------------------------------------------------------------------
+# Measurement layer (per logical measurement -> mean +/- t-CI)
+# ----------------------------------------------------------------------------
+measurement:
+  sample_count: 7           # rapid samples per logical measurement
+  min_valid_samples: 3      # fewer valid -> SENSOR_FAULT, never guessed
+  confidence_level: 0.95    # (1 - alpha) for the t confidence interval
+  mad_k: 3.5                # MAD outlier rejection threshold (modified z-score)
+  turbulence_cm: 0.8        # robust spread above this -> TURBULENT, skip sample
+  sensor_min_cm: 2.0        # HC-SR04 valid range floor
+  sensor_max_cm: 400.0      # HC-SR04 valid range ceiling
+
+# ----------------------------------------------------------------------------
+# Detection layer (explainable statistics + state machine)
+# ----------------------------------------------------------------------------
+detection:
+  sample_interval_s: 60.0          # seconds between logical measurements
+  rolling_window_min: 120.0        # trend window length (minutes)
+  min_points: 8                    # min measurements before a trend is trusted
+  min_leak_rate_cm_per_hr: 0.5     # flag only declines faster than this
+  watch_rate_cm_per_hr: 0.1        # weak-but-real declines -> WATCH (never dropped)
+  refill_min_cm: 0.6               # upward jump >= this counts as a refill
+  flush_drop_cm: 6.0               # drop >= this is a flush (human use), not a leak
+  min_refills_for_leak: 2          # refills (no use) that count as strong evidence
+  occupied_confidence_discount: 0.5  # de-weight single-window evidence when occupied
+  # Overnight idle window (school closed). Any decline/refill here is high
+  # confidence because there is no legitimate use. Wraps past midnight.
+  idle_window:
+    start: "23:00"
+    end: "05:00"
+
+# ----------------------------------------------------------------------------
+# Telemetry transport. Credentials come from ENV VARS, never this file.
+#   AQUALERT_MQTT_USERNAME, AQUALERT_MQTT_PASSWORD
+#   AQUALERT_REST_TOKEN (for the REST fallback)
+# ----------------------------------------------------------------------------
+telemetry:
+  transport: "mqtt"          # "mqtt" or "rest"
+  mqtt:
+    host: "broker.example.com"
+    port: 8883               # TLS
+    topic: "aqualert/telemetry"
+    qos: 1
+    tls: true
+    ca_certs: null           # path to CA bundle, or null for system trust
+    keepalive_s: 60
+  rest:
+    url: "https://ingest.example.com/v1/telemetry"
+    timeout_s: 10
+  # Local store-and-forward queue (no data loss when offline)
+  spool_db: "aqualert_spool.sqlite"
+  max_spool_rows: 100000
