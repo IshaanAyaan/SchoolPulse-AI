@@ -12,9 +12,9 @@ This project is open sourced under the MIT license.
 
 ## System Overview
 
-- **Aqualert AI (water):** Aqualert AI is an acoustic edge-AI device that listens to school plumbing and detects leaks in toilets, sinks, showers, and pipes before they burst, cutting wasted water and surprise bills. A binary audio classifier runs on a Raspberry Pi Zero with a sound sensor, instantly alerting staff to leaks.
+- **Aqualert AI (water):** Aqualert AI is an acoustic edge-AI device that listens to school plumbing and detects leaks in toilets, sinks, showers, and pipes before they burst, cutting wasted water and surprise bills. A binary audio classifier runs on a Raspberry Pi Zero with a sound sensor, instantly alerting staff to leaks.  See `aqualert-ai`.
 
-- **Compost AI (food):** Compost AI is an AI smart bin that uses computer vision to sort waste into garbage, recycling, or compost at the point of disposal, keeping contaminated loads out of landfills and routing food scraps to composting. A CNN runs on a Raspberry Pi 4 with a camera and servo motors, while a connected app logs each sorted item with its confidence level and alerts staff when a bin is full.
+- **Compost AI (food):** Compost AI is an AI smart bin that uses computer vision to sort waste into garbage, recycling, or compost at the point of disposal, keeping contaminated loads out of landfills and routing food scraps to composting. A CNN runs on a Raspberry Pi 4 with a camera and servo motors, while a connected app logs each sorted item with its confidence level and alerts staff when a bin is full. See `Compost AI/`.
 
 - **Pulse Agent AI / ScheduleGhost (energy + operations):** A software-heavy backend agent that reads school schedules, event history, utility-style energy logs, water alerts, and Compost AI outputs to detect after-hours energy waste, forecast event needs, retrieve project context with RAG, and turn findings into human-checkable action cards. See `pulse-agent-ai/`.
 
