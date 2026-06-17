@@ -186,11 +186,9 @@ Generated: {results["generated_at"]}
 {json.dumps(results["services"]["sample_event_plan"], indent=2)}
 ```
 
-## Remote GPU Status
+## Notes
 
-The first A10 SSH test was attempted with `ssh ubuntu@170.9.49.205`, but the host rejected the available local keys with `Permission denied (publickey)`.
-
-Next step for GPU/Gemma testing: add this machine's public key to the A10 server or provide the matching private key, then run this same script plus the Gemma/vLLM server test on the GPU box.
+This report validates the structured backend pipeline. If it is run on a GPU machine, the environment section records the detected GPU. Local LLM/vLLM results are tracked separately in `docs/gpu_gemma_results.md`.
 """
     REPORT.write_text(report, encoding="utf-8")
 
@@ -217,4 +215,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

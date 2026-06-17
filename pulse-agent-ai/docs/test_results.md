@@ -1,12 +1,12 @@
 # Pulse Agent AI Test Results
 
-Generated: 2026-06-17T19:02:22.271784+00:00
+Generated: 2026-06-17T19:25:54.944266+00:00
 
 ## Environment
 
-- Python: `3.12.13 (main, Mar  3 2026, 15:35:03) [Clang 21.1.4 ]`
-- Platform: `macOS-26.5.1-arm64-arm-64bit`
-- GPU: `unavailable: [Errno 2] No such file or directory: 'nvidia-smi'`
+- Python: `3.10.12 (main, Jan 26 2026, 14:55:28) [GCC 11.4.0]`
+- Platform: `Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35`
+- GPU: `NVIDIA A100-SXM4-40GB, 40960 MiB`
 
 ## Pipeline Checks
 
@@ -33,7 +33,7 @@ Generated: 2026-06-17T19:02:22.271784+00:00
 - Event servings regressor: `RandomForestRegressor`
 - Evaluation note: Metrics are for synthetic MVP wiring only. Real school or BDG2 data should be used before claiming real-world accuracy.
 - Energy rows: 16632
-- Synthetic energy F1: 1.000
+- Synthetic energy F1: 0.987
 - Event servings MAE: 32.46 servings
 
 ## Agent Smoke Result
@@ -60,8 +60,6 @@ Generated: 2026-06-17T19:02:22.271784+00:00
 }
 ```
 
-## Remote GPU Status
+## Notes
 
-The first A10 SSH test was attempted with `ssh ubuntu@170.9.49.205`, but the host rejected the available local keys with `Permission denied (publickey)`.
-
-Next step for GPU/Gemma testing: add this machine's public key to the A10 server or provide the matching private key, then run this same script plus the Gemma/vLLM server test on the GPU box.
+This report validates the structured backend pipeline on the A100 machine. Local LLM/vLLM results are tracked separately in `docs/gpu_gemma_results.md`.
