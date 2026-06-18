@@ -1,5 +1,7 @@
 .venv/
 .venv-gemma/
+node_modules/
+.vercel/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -7,4 +9,4 @@ __pycache__/
 # Runtime rebuildable artifacts. CSV samples and trained demo models are intentionally kept.
 data/processed/*.db
 data/processed/*.sqlite
-
+.vercel

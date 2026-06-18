@@ -3,12 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .agent import PulseAgent
 from .analytics import AnalyticsService
-from .config import PROJECT_ROOT
+from .config import ALLOWED_ORIGINS, LLM_BASE_URL, LLM_MODEL, PROJECT_ROOT
 from .database import ensure_database
 from .rag import RagRetriever
 from .schemas import AgentQuery, RagSearchQuery
@@ -18,6 +19,13 @@ app = FastAPI(
     title="Pulse Agent AI",
     description="SchoolPrint AI backend for RAG, recommendations, energy/event intelligence, and voice-agent responses.",
     version="0.1.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 static_dir = PROJECT_ROOT / "app" / "static"
@@ -40,7 +48,12 @@ def dashboard() -> FileResponse:
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "service": "pulse-agent-ai"}
+    return {
+        "status": "ok",
+        "service": "pulse-agent-ai",
+        "llm_configured": bool(LLM_BASE_URL),
+        "llm_model": LLM_MODEL,
+    }
 
 
 @app.get("/api/overview")
@@ -82,4 +95,3 @@ def search_rag(payload: RagSearchQuery) -> dict:
 @app.get("/api/event-plan")
 def event_plan(event_type: str = "sports", expected_attendance: int = 200, duration_hr: float = 2.5) -> dict:
     return analytics.recommend_event_plan(event_type, expected_attendance, duration_hr)
-

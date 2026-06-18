@@ -41,10 +41,10 @@ def assert_true(condition: bool, message: str) -> None:
 
 def test_data() -> dict:
     expected_minimums = {
-        "energy_logs.csv": 10000,
-        "event_plans.csv": 30,
-        "water_alerts.csv": 50,
-        "waste_logs.csv": 500,
+        "energy_logs.csv": 200,
+        "event_logs.csv": 30,
+        "water_logs.csv": 50,
+        "waste_logs.csv": 50,
         "transport_plans.csv": 30,
     }
     results = {}

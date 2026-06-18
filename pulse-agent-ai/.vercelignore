@@ -1,0 +1,13 @@
+.venv/
+.venv-gemma/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/processed/
+tmp/
+exports/
+.env
+.env.local
+.env.*.local
+

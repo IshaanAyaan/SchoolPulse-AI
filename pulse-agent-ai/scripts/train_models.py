@@ -9,6 +9,8 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 
+from app.data_normalization import normalize_frame
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "synthetic"
@@ -16,7 +18,7 @@ MODELS = ROOT / "models"
 
 
 def train_energy_model() -> dict:
-    frame = pd.read_csv(DATA / "energy_logs.csv")
+    frame = normalize_frame("energy_logs", pd.read_csv(DATA / "energy_logs.csv"))
     features = frame[["zone", "hour", "weekday", "outdoor_temp_f", "occupancy_expected", "expected_kwh", "actual_kwh"]].copy()
     features["kwh_delta"] = features["actual_kwh"] - features["expected_kwh"]
     features["kwh_ratio"] = features["actual_kwh"] / features["expected_kwh"].clip(lower=0.1)
@@ -45,7 +47,7 @@ def train_energy_model() -> dict:
 
 
 def train_event_model() -> dict:
-    frame = pd.read_csv(DATA / "event_plans.csv")
+    frame = normalize_frame("event_logs", pd.read_csv(DATA / "event_logs.csv"))
     target = (frame["actual_attendance"] * 0.92).round().clip(lower=0)
     features = frame[["category", "expected_attendance", "duration_hr", "start_hour"]].copy()
     features = pd.get_dummies(features, columns=["category"])

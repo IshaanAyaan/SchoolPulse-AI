@@ -30,8 +30,8 @@ Research source metadata lives in `data/raw/research_sources.json`.
 | Synthetic table | Future real version |
 | --- | --- |
 | `energy_logs.csv` | utility interval data, Green Button exports, BAS/HVAC schedule exports |
-| `event_plans.csv` | school calendar, event forms, cafeteria orders, after-event reports |
-| `water_alerts.csv` | Aqualert edge-device alerts |
+| `event_logs.csv` | school calendar, event forms, cafeteria orders, after-event reports |
+| `water_logs.csv` | Aqualert edge-device alerts |
 | `waste_logs.csv` | Compost AI classifications and human review corrections |
 | `transport_plans.csv` | event traffic notes, attendance estimates, pickup plans |
 
@@ -50,4 +50,3 @@ Research source metadata lives in `data/raw/research_sources.json`.
 - Keep utility/customer data opt-in.
 - Keep human approval for all physical actions.
 - Let the agent cite retrieved context instead of inventing claims.
-

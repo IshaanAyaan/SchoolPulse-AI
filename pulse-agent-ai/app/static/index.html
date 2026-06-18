@@ -3,88 +3,590 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pulse Agent AI</title>
+    <title>SchoolPrint Pulse</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="header">
-        <div>
-          <p class="eyebrow">SchoolPrint AI</p>
-          <h1>Pulse Agent AI</h1>
-          <p class="subhead">Backend test dashboard for hidden water, energy, waste, event, and transportation footprint intelligence.</p>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="SchoolPrint modules">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">SP</span>
+          <div>
+            <strong>SchoolPrint</strong>
+            <span>Pulse Agent</span>
+          </div>
         </div>
-        <button id="refresh">Refresh</button>
-      </section>
 
-      <section class="metrics" id="metrics"></section>
+        <nav class="module-nav" aria-label="Dashboard sections">
+          <button class="nav-item active" data-panel="overviewPanel">Overview</button>
+          <button class="nav-item" data-panel="energyPanel">Energy</button>
+          <button class="nav-item" data-panel="waterPanel">Water</button>
+          <button class="nav-item" data-panel="wastePanel">Waste</button>
+          <button class="nav-item" data-panel="eventsPanel">Events</button>
+        </nav>
 
-      <section class="agent">
-        <label for="query">Ask the school operations agent</label>
-        <div class="query-row">
-          <input id="query" value="What should we fix first before the next big event?" />
-          <button id="ask">Ask</button>
+        <div class="system-card">
+          <span class="status-dot" id="statusDot"></span>
+          <div>
+            <strong id="systemStatus">Checking</strong>
+            <span id="modelStatus">Backend</span>
+          </div>
         </div>
-        <p id="answer" class="answer"></p>
-      </section>
+      </aside>
 
-      <section>
-        <h2>Top Action Cards</h2>
-        <div class="cards" id="cards"></div>
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">BASIS Phoenix simulated operations</p>
+            <h1>Hidden Footprint Console</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" id="refresh">Refresh</button>
+            <a class="ghost-link" href="/docs" target="_blank" rel="noreferrer">API docs</a>
+          </div>
+        </header>
+
+        <section class="agent-panel" aria-labelledby="agentTitle">
+          <div class="agent-copy">
+            <p class="eyebrow">Pulse Agent</p>
+            <h2 id="agentTitle">Ask what to fix next</h2>
+          </div>
+          <div class="agent-controls">
+            <div class="query-row">
+              <input id="query" value="What should we fix first before Friday volleyball?" aria-label="Ask Pulse Agent" />
+              <button id="voice" class="secondary-button" type="button">Voice</button>
+              <button id="ask" type="button">Ask</button>
+            </div>
+            <div class="quick-prompts" aria-label="Example questions">
+              <button class="prompt-chip" type="button">Plan a sports event for 250 people</button>
+              <button class="prompt-chip" type="button">Explain why this is more than a dashboard</button>
+              <button class="prompt-chip" type="button">What needs human review?</button>
+            </div>
+          </div>
+          <article class="answer-box" id="answerBox">
+            <div class="answer-toolbar">
+              <span class="answer-kicker" id="answerKicker">Ready</span>
+              <div class="response-actions" aria-label="Response actions">
+                <label class="speak-toggle">
+                  <input id="autoSpeak" type="checkbox" checked />
+                  Read aloud
+                </label>
+                <button class="mini-button" id="speakAnswer" type="button" disabled>Replay</button>
+                <button class="mini-button" id="copyAnswer" type="button" disabled>Copy answer</button>
+                <button class="mini-button" id="copyBrief" type="button" disabled>Copy brief</button>
+              </div>
+            </div>
+            <div class="transcript-grid" aria-live="polite">
+              <section class="transcript-block" aria-labelledby="inputTranscriptLabel">
+                <span id="inputTranscriptLabel">Input transcript</span>
+                <p id="inputTranscript">No prompt sent yet.</p>
+              </section>
+              <section class="transcript-block" aria-labelledby="outputTranscriptLabel">
+                <span id="outputTranscriptLabel">Agent output</span>
+                <p id="answer">Ask Pulse Agent for a ranked action plan.</p>
+              </section>
+            </div>
+            <p class="copy-status" id="copyStatus" aria-live="polite"></p>
+          </article>
+        </section>
+
+        <section class="metrics" id="metrics" aria-label="Impact totals"></section>
+
+        <section class="panel active-panel" id="overviewPanel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Action queue</p>
+              <h2>Highest priority checks</h2>
+            </div>
+            <span id="cardCount" class="subtle-pill">0 cards</span>
+          </div>
+          <div class="cards" id="cards"></div>
+        </section>
+
+        <section class="panel" id="energyPanel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">ScheduleGhost</p>
+              <h2>Energy anomalies</h2>
+            </div>
+            <span class="subtle-pill" id="energyTotal">0 kWh</span>
+          </div>
+          <div class="data-table" id="energyTable"></div>
+        </section>
+
+        <section class="panel" id="waterPanel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Aqualert</p>
+              <h2>Leak verification</h2>
+            </div>
+            <span class="subtle-pill" id="waterTotal">0 gal</span>
+          </div>
+          <div class="data-table" id="waterTable"></div>
+        </section>
+
+        <section class="panel" id="wastePanel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Compost AI</p>
+              <h2>Human review</h2>
+            </div>
+            <span class="subtle-pill" id="wasteTotal">0 lb</span>
+          </div>
+          <div class="data-table" id="wasteTable"></div>
+        </section>
+
+        <section class="panel" id="eventsPanel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">EventFootprint</p>
+              <h2>Planning forecast</h2>
+            </div>
+            <span class="subtle-pill" id="eventsTotal">0 events</span>
+          </div>
+          <form class="planner" id="eventPlanner">
+            <label>
+              Event type
+              <select id="eventType">
+                <option value="sports">Sports</option>
+                <option value="competition">Competition</option>
+                <option value="assembly">Assembly</option>
+                <option value="family_night">Family night</option>
+                <option value="club">Club</option>
+              </select>
+            </label>
+            <label>
+              Attendance
+              <input id="attendance" type="number" min="10" max="1200" value="250" />
+            </label>
+            <label>
+              Hours
+              <input id="duration" type="number" min="1" max="8" step="0.5" value="3" />
+            </label>
+            <button type="submit">Forecast</button>
+          </form>
+          <div class="forecast-card" id="forecastCard"></div>
+          <div class="data-table" id="eventsTable"></div>
+        </section>
       </section>
     </main>
 
     <script>
+      const state = {
+        overview: null,
+        modules: {},
+        recognition: null,
+        listening: false,
+        lastExchange: null
+      };
+
+      const moduleTone = {
+        Energy: "tone-energy",
+        Water: "tone-water",
+        Waste: "tone-waste",
+        Events: "tone-events"
+      };
+
       async function getJson(url, options) {
         const response = await fetch(url, options);
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`);
+        }
         return response.json();
       }
 
-      function metric(label, value) {
-        return `<article class="metric"><span>${label}</span><strong>${value}</strong></article>`;
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
       }
 
-      function card(item) {
-        return `<article class="card">
-          <div class="card-top">
-            <span>${item.module}</span>
-            <strong>${item.priority}</strong>
-          </div>
-          <h3>${item.title}</h3>
-          <p>${item.recommendation}</p>
-          <p class="muted">${item.evidence}</p>
-          <p class="impact">${item.estimated_impact}</p>
+      function formatNumber(value, digits = 0) {
+        return Number(value || 0).toLocaleString(undefined, {
+          maximumFractionDigits: digits
+        });
+      }
+
+      function setStatus(ok, text, modelText = "Backend") {
+        document.getElementById("statusDot").classList.toggle("online", ok);
+        document.getElementById("statusDot").classList.toggle("offline", !ok);
+        document.getElementById("systemStatus").textContent = text;
+        document.getElementById("modelStatus").textContent = modelText;
+      }
+
+      function setResponseTools(enabled) {
+        document.getElementById("copyAnswer").disabled = !enabled;
+        document.getElementById("copyBrief").disabled = !enabled;
+        document.getElementById("speakAnswer").disabled =
+          !enabled || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window);
+      }
+
+      function setTranscript(query, answerText, kickerText) {
+        document.getElementById("inputTranscript").textContent = query || "No prompt sent yet.";
+        document.getElementById("answer").textContent = answerText;
+        document.getElementById("answerKicker").textContent = kickerText;
+      }
+
+      function speakText(text) {
+        if (!text || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.98;
+        utterance.pitch = 1;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      async function copyText(text, label) {
+        if (!text) return;
+        const status = document.getElementById("copyStatus");
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+          }
+          status.textContent = `${label} copied.`;
+        } catch (error) {
+          status.textContent = "Copy failed.";
+        }
+      }
+
+      function citationText(citation) {
+        if (!citation || typeof citation !== "object") return String(citation ?? "");
+        return [
+          citation.title,
+          citation.source,
+          citation.score !== undefined ? `score ${citation.score}` : ""
+        ].filter(Boolean).join(" | ");
+      }
+
+      function buildBrief() {
+        const exchange = state.lastExchange;
+        if (!exchange) return "";
+        const cards = exchange.actionCards.length
+          ? exchange.actionCards.map((item, index) => [
+              `${index + 1}. ${item.module}: ${item.title}`,
+              `   Evidence: ${item.evidence}`,
+              `   Action: ${item.recommendation}`,
+              `   Human check: ${item.human_check}`
+            ].join("\n")).join("\n\n")
+          : "No action cards returned.";
+        const citations = exchange.citations.length
+          ? exchange.citations.map((citation) => `- ${citationText(citation)}`).join("\n")
+          : "No citations returned.";
+        return [
+          "SchoolPrint Pulse Agent Brief",
+          "",
+          `Model mode: ${exchange.usedLlm ? "Gemma LLM response" : "deterministic fallback response"}`,
+          "",
+          `Input: ${exchange.query}`,
+          "",
+          `Output: ${exchange.answer}`,
+          "",
+          "Top Action Cards:",
+          cards,
+          "",
+          "Citations:",
+          citations
+        ].join("\n");
+      }
+
+      function metric(label, value, unit, tone) {
+        return `<article class="metric ${tone}">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+          <small>${escapeHtml(unit)}</small>
         </article>`;
       }
 
-      async function loadOverview() {
-        const data = await getJson("/api/overview");
-        const totals = data.impact_totals;
+      function confidenceBar(confidence) {
+        const percent = Math.round(Number(confidence || 0) * 100);
+        return `<div class="confidence" aria-label="Confidence ${percent}%">
+          <span style="width: ${Math.max(5, Math.min(100, percent))}%"></span>
+        </div>`;
+      }
+
+      function actionCard(item) {
+        const tone = moduleTone[item.module] || "tone-default";
+        return `<article class="action-card ${tone}">
+          <div class="card-top">
+            <span>${escapeHtml(item.module)}</span>
+            <strong>${escapeHtml(item.priority)}</strong>
+          </div>
+          <h3>${escapeHtml(item.title)}</h3>
+          <dl>
+            <div>
+              <dt>Location</dt>
+              <dd>${escapeHtml(item.location)}</dd>
+            </div>
+            <div>
+              <dt>Evidence</dt>
+              <dd>${escapeHtml(item.evidence)}</dd>
+            </div>
+          </dl>
+          <p>${escapeHtml(item.recommendation)}</p>
+          <p class="impact">${escapeHtml(item.estimated_impact)}</p>
+          ${confidenceBar(item.confidence)}
+          <p class="human-check">${escapeHtml(item.human_check)}</p>
+        </article>`;
+      }
+
+      function table(headers, rows, emptyText) {
+        if (!rows.length) {
+          return `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
+        }
+        return `<table>
+          <thead>
+            <tr>${headers.map((header) => `<th>${escapeHtml(header.label)}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `<tr>${headers.map((header) => `<td>${escapeHtml(header.value(row))}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>`;
+      }
+
+      function renderOverview() {
+        const totals = state.overview.impact_totals;
         document.getElementById("metrics").innerHTML = [
-          metric("Wasted kWh", totals.estimated_wasted_kwh),
-          metric("Water gallons at risk", totals.open_water_gallons_at_risk),
-          metric("Food waste lb", totals.food_waste_lbs_logged),
-          metric("Events analyzed", totals.events_analyzed)
+          metric("Energy waste", formatNumber(totals.estimated_wasted_kwh, 1), "kWh flagged", "metric-energy"),
+          metric("Water risk", formatNumber(totals.open_water_gallons_at_risk, 1), "gallons open", "metric-water"),
+          metric("Food waste", formatNumber(totals.food_waste_lbs_logged, 1), "pounds logged", "metric-waste"),
+          metric("Events", formatNumber(totals.events_analyzed), "analyzed", "metric-events")
         ].join("");
-        document.getElementById("cards").innerHTML = data.top_action_cards.map(card).join("");
+
+        const cards = state.overview.top_action_cards || [];
+        document.getElementById("cardCount").textContent = `${cards.length} cards`;
+        document.getElementById("cards").innerHTML = cards.map(actionCard).join("");
+      }
+
+      function renderEnergy(data) {
+        document.getElementById("energyTotal").textContent = `${formatNumber(data.estimated_wasted_kwh, 1)} kWh`;
+        document.getElementById("energyTable").innerHTML = table(
+          [
+            {label: "Zone", value: (row) => row.zone},
+            {label: "Actual", value: (row) => `${Number(row.actual_kwh).toFixed(1)} kWh`},
+            {label: "Expected", value: (row) => `${Number(row.expected_kwh).toFixed(1)} kWh`},
+            {label: "Reason", value: (row) => row.waste_reason || "anomaly"},
+            {label: "Time", value: (row) => new Date(row.timestamp).toLocaleString()}
+          ],
+          data.rows || [],
+          "No energy anomalies."
+        );
+      }
+
+      function renderWater(data) {
+        document.getElementById("waterTotal").textContent = `${formatNumber(data.open_gallons_at_risk, 1)} gal`;
+        document.getElementById("waterTable").innerHTML = table(
+          [
+            {label: "Location", value: (row) => row.location},
+            {label: "Duration", value: (row) => `${row.duration_min} min`},
+            {label: "Gallons", value: (row) => Number(row.estimated_gallons).toFixed(1)},
+            {label: "Confidence", value: (row) => `${Math.round(Number(row.confidence) * 100)}%`},
+            {label: "Status", value: (row) => row.status}
+          ],
+          data.rows || [],
+          "No open water alerts."
+        );
+      }
+
+      function renderWaste(data) {
+        document.getElementById("wasteTotal").textContent = `${formatNumber(data.food_waste_lbs, 1)} lb`;
+        document.getElementById("wasteTable").innerHTML = table(
+          [
+            {label: "Item", value: (row) => row.item},
+            {label: "Category", value: (row) => row.category},
+            {label: "Source", value: (row) => row.source},
+            {label: "Weight", value: (row) => `${Number(row.weight_lbs).toFixed(2)} lb`},
+            {label: "Confidence", value: (row) => `${Math.round(Number(row.confidence) * 100)}%`}
+          ],
+          data.rows || [],
+          "No waste items need review."
+        );
+      }
+
+      function renderEvents(data) {
+        document.getElementById("eventsTotal").textContent = `${formatNumber(data.events_analyzed)} events`;
+        document.getElementById("eventsTable").innerHTML = table(
+          [
+            {label: "Event", value: (row) => row.name},
+            {label: "Type", value: (row) => row.category},
+            {label: "Room", value: (row) => row.rooms},
+            {label: "Attendance", value: (row) => `${row.actual_attendance}/${row.expected_attendance}`},
+            {label: "Food waste", value: (row) => `${Number(row.food_waste_lbs).toFixed(1)} lb`}
+          ],
+          data.rows || [],
+          "No event history loaded."
+        );
+      }
+
+      function renderForecast(data) {
+        document.getElementById("forecastCard").innerHTML = `<article>
+          <div>
+            <span>Recommended servings</span>
+            <strong>${formatNumber(data.recommended_servings)}</strong>
+          </div>
+          <p>${escapeHtml(data.energy_note)}</p>
+          <p>${escapeHtml(data.waste_note)}</p>
+          <small>${escapeHtml(data.human_check)}</small>
+        </article>`;
+      }
+
+      async function loadAll() {
+        try {
+          setStatus(false, "Loading", "Gemma optional");
+          const [overview, energy, water, waste, events] = await Promise.all([
+            getJson("/api/overview"),
+            getJson("/api/energy"),
+            getJson("/api/water"),
+            getJson("/api/waste"),
+            getJson("/api/events")
+          ]);
+          state.overview = overview;
+          state.modules = {energy, water, waste, events};
+          renderOverview();
+          renderEnergy(energy);
+          renderWater(water);
+          renderWaste(waste);
+          renderEvents(events);
+          await forecastEvent();
+          setStatus(true, "Online", "Local backend");
+        } catch (error) {
+          setStatus(false, "Offline", "Check API");
+          document.getElementById("answer").textContent = error.message;
+        }
       }
 
       async function askAgent() {
-        const query = document.getElementById("query").value;
-        const data = await getJson("/api/agent/query", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({query})
-        });
-        document.getElementById("answer").textContent = data.answer;
+        const query = document.getElementById("query").value.trim();
+        if (!query) return;
+        const askButton = document.getElementById("ask");
+        askButton.disabled = true;
+        document.getElementById("copyStatus").textContent = "";
+        setResponseTools(false);
+        setTranscript(query, "Reading logs and retrieved context...", "Thinking");
+        try {
+          const data = await getJson("/api/agent/query", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({query})
+          });
+          state.lastExchange = {
+            query,
+            answer: data.answer,
+            usedLlm: data.used_llm,
+            actionCards: data.action_cards || [],
+            citations: data.citations || []
+          };
+          setTranscript(query, data.answer, data.used_llm ? "Gemma response" : "Fallback response");
+          setResponseTools(true);
+          if (document.getElementById("autoSpeak").checked) {
+            speakText(data.answer);
+          }
+          if (data.action_cards && data.action_cards.length) {
+            document.getElementById("cards").innerHTML = data.action_cards.map(actionCard).join("");
+            document.getElementById("cardCount").textContent = `${data.action_cards.length} cards`;
+          }
+        } catch (error) {
+          state.lastExchange = null;
+          setTranscript(query, error.message, "Error");
+        } finally {
+          askButton.disabled = false;
+        }
       }
 
-      document.getElementById("refresh").addEventListener("click", loadOverview);
+      async function forecastEvent() {
+        const eventType = document.getElementById("eventType").value;
+        const attendance = document.getElementById("attendance").value;
+        const duration = document.getElementById("duration").value;
+        const data = await getJson(`/api/event-plan?event_type=${encodeURIComponent(eventType)}&expected_attendance=${encodeURIComponent(attendance)}&duration_hr=${encodeURIComponent(duration)}`);
+        renderForecast(data);
+      }
+
+      function setupTabs() {
+        document.querySelectorAll(".nav-item").forEach((button) => {
+          button.addEventListener("click", () => {
+            document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+            document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("active-panel"));
+            button.classList.add("active");
+            document.getElementById(button.dataset.panel).classList.add("active-panel");
+          });
+        });
+      }
+
+      function setupVoice() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const voiceButton = document.getElementById("voice");
+        if (!SpeechRecognition) {
+          voiceButton.disabled = true;
+          voiceButton.textContent = "No voice";
+          return;
+        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        recognition.addEventListener("result", (event) => {
+          const transcript = event.results[0][0].transcript;
+          document.getElementById("query").value = transcript;
+          setTranscript(transcript, "Voice captured. Sending prompt to Pulse Agent...", "Voice input");
+          askAgent();
+        });
+        recognition.addEventListener("end", () => {
+          state.listening = false;
+          voiceButton.textContent = "Voice";
+        });
+        voiceButton.addEventListener("click", () => {
+          if (state.listening) {
+            recognition.stop();
+            return;
+          }
+          state.listening = true;
+          voiceButton.textContent = "Listening";
+          setTranscript("Listening...", "Speak your prompt clearly. Pulse Agent will answer here.", "Voice input");
+          recognition.start();
+        });
+        state.recognition = recognition;
+      }
+
+      document.getElementById("refresh").addEventListener("click", loadAll);
       document.getElementById("ask").addEventListener("click", askAgent);
-      loadOverview();
-      askAgent();
+      document.getElementById("query").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") askAgent();
+      });
+      document.querySelectorAll(".prompt-chip").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.getElementById("query").value = button.textContent;
+          askAgent();
+        });
+      });
+      document.getElementById("eventPlanner").addEventListener("submit", (event) => {
+        event.preventDefault();
+        forecastEvent();
+      });
+      document.getElementById("copyAnswer").addEventListener("click", () => {
+        copyText(state.lastExchange?.answer || "", "Answer");
+      });
+      document.getElementById("copyBrief").addEventListener("click", () => {
+        copyText(buildBrief(), "Brief");
+      });
+      document.getElementById("speakAnswer").addEventListener("click", () => {
+        speakText(state.lastExchange?.answer || "");
+      });
+
+      setupTabs();
+      setupVoice();
+      loadAll();
     </script>
   </body>
 </html>
-

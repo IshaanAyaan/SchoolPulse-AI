@@ -7,6 +7,7 @@ import joblib
 import pandas as pd
 
 from .config import DATABASE_PATH, MODELS_DIR, SYNTHETIC_DIR
+from .data_normalization import normalize_frame
 from .database import get_connection
 
 
@@ -28,15 +29,15 @@ class AnalyticsService:
     def _read_table(self, table: str, fallback_csv: str) -> pd.DataFrame:
         if self.db_path.exists():
             with get_connection(self.db_path) as connection:
-                return pd.read_sql_query(f"SELECT * FROM {table}", connection)
+                return normalize_frame(table, pd.read_sql_query(f"SELECT * FROM {table}", connection))
         path = SYNTHETIC_DIR / fallback_csv
-        return pd.read_csv(path) if path.exists() else pd.DataFrame()
+        return normalize_frame(table, pd.read_csv(path)) if path.exists() else pd.DataFrame()
 
     def load_frames(self) -> DataFrames:
         return DataFrames(
             energy=self._read_table("energy_logs", "energy_logs.csv"),
-            events=self._read_table("event_plans", "event_plans.csv"),
-            water=self._read_table("water_alerts", "water_alerts.csv"),
+            events=self._read_table("event_logs", "event_logs.csv"),
+            water=self._read_table("water_logs", "water_logs.csv"),
             waste=self._read_table("waste_logs", "waste_logs.csv"),
             transport=self._read_table("transport_plans", "transport_plans.csv"),
         )

@@ -16,13 +16,27 @@ def resolve_project_path(value: str | None, default: str) -> Path:
     return PROJECT_ROOT / path
 
 
-DATABASE_PATH = resolve_project_path(os.getenv("DATABASE_PATH"), "data/processed/schoolprint_ai.db")
+def default_database_path() -> Path:
+    configured = os.getenv("DATABASE_PATH")
+    if configured:
+        return resolve_project_path(configured, "data/processed/schoolprint_ai.db")
+    if os.getenv("VERCEL"):
+        return Path("/tmp/schoolprint_ai.db")
+    return resolve_project_path(None, "data/processed/schoolprint_ai.db")
+
+
+def parse_csv_env(name: str, default: str = "") -> list[str]:
+    raw = os.getenv(name, default)
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+DATABASE_PATH = default_database_path()
 RAG_INDEX_PATH = resolve_project_path(os.getenv("RAG_INDEX_PATH"), "rag_index/index.joblib")
 
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").rstrip("/")
 LLM_MODEL = os.getenv("LLM_MODEL", "google/gemma-4-12B-it")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "EMPTY")
+ALLOWED_ORIGINS = parse_csv_env("ALLOWED_ORIGINS", "*")
 
 SYNTHETIC_DIR = PROJECT_ROOT / "data" / "synthetic"
 MODELS_DIR = PROJECT_ROOT / "models"
-

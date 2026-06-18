@@ -260,16 +260,15 @@ def main() -> None:
     waste = make_waste_logs(events)
     transport = make_transport_plans(events)
 
-    events.to_csv(OUT / "event_plans.csv", index=False)
+    events.to_csv(OUT / "event_logs.csv", index=False)
     energy.to_csv(OUT / "energy_logs.csv", index=False)
-    water.to_csv(OUT / "water_alerts.csv", index=False)
+    water.to_csv(OUT / "water_logs.csv", index=False)
     waste.to_csv(OUT / "waste_logs.csv", index=False)
     transport.to_csv(OUT / "transport_plans.csv", index=False)
 
     print(f"Wrote synthetic data to {OUT}")
-    print(f"energy_logs={len(energy)} event_plans={len(events)} water_alerts={len(water)} waste_logs={len(waste)}")
+    print(f"energy_logs={len(energy)} event_logs={len(events)} water_logs={len(water)} waste_logs={len(waste)}")
 
 
 if __name__ == "__main__":
     main()
-
