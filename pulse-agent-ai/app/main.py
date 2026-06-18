@@ -9,11 +9,12 @@ from fastapi.staticfiles import StaticFiles
 
 from .agent import PulseAgent
 from .analytics import AnalyticsService
-from .config import ALLOWED_ORIGINS, ELEVENLABS_API_KEY, LLM_BASE_URL, LLM_MODEL, PROJECT_ROOT
+from .config import ALLOWED_ORIGINS, DATABASE_PATH, ELEVENLABS_API_KEY, LLM_BASE_URL, LLM_MODEL, PROJECT_ROOT
 from .database import ensure_database
 from .rag import RagRetriever
-from .schemas import AgentQuery, RagSearchQuery, VoiceSpeakRequest
+from .schemas import AgentQuery, RagSearchQuery, VoiceSpeakRequest, WaterSensorReading
 from .voice import ElevenLabsVoiceService
+from .water_live import WaterLiveService
 
 
 app = FastAPI(
@@ -36,11 +37,13 @@ analytics = AnalyticsService()
 agent = PulseAgent()
 rag = RagRetriever()
 voice = ElevenLabsVoiceService()
+water_live = WaterLiveService(DATABASE_PATH)
 
 
 @app.on_event("startup")
 def startup() -> None:
     ensure_database()
+    water_live.ensure_table()
 
 
 @app.get("/")
@@ -72,6 +75,19 @@ def energy() -> dict:
 @app.get("/api/water")
 def water() -> dict:
     return analytics.water_summary()
+
+
+@app.get("/api/water/live")
+def water_live_feed(limit: int = Query(default=12, ge=1, le=50)) -> dict:
+    return {
+        "live_sensor": water_live.latest_reading(),
+        "live_history": water_live.recent_readings(limit),
+    }
+
+
+@app.post("/api/water/live")
+def ingest_water_live(payload: WaterSensorReading) -> dict:
+    return water_live.ingest(payload)
 
 
 @app.get("/api/waste")

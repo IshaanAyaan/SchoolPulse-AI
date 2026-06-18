@@ -30,6 +30,16 @@ def parse_csv_env(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def parse_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
 DATABASE_PATH = default_database_path()
 RAG_INDEX_PATH = resolve_project_path(os.getenv("RAG_INDEX_PATH"), "rag_index/index.joblib")
 
@@ -43,6 +53,11 @@ ELEVENLABS_API_BASE_URL = os.getenv("ELEVENLABS_API_BASE_URL", "https://api.elev
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb")
 ELEVENLABS_TTS_MODEL = os.getenv("ELEVENLABS_TTS_MODEL", "eleven_flash_v2_5")
 ELEVENLABS_STT_MODEL = os.getenv("ELEVENLABS_STT_MODEL", "scribe_v2")
+
+SUPABASE_SYNC_URL = os.getenv("SUPABASE_SYNC_URL", "").rstrip("/")
+SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY", "").strip()
+SUPABASE_SYNC_SOURCE = os.getenv("SUPABASE_SYNC_SOURCE", "aqualert-arduino").strip() or "aqualert-arduino"
+WATER_LIVE_FRESHNESS_SECONDS = parse_int_env("WATER_LIVE_FRESHNESS_SECONDS", 15)
 
 SYNTHETIC_DIR = PROJECT_ROOT / "data" / "synthetic"
 MODELS_DIR = PROJECT_ROOT / "models"

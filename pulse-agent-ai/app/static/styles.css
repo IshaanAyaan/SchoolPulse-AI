@@ -527,6 +527,10 @@ h3 {
   margin-bottom: 16px;
 }
 
+.section-heading-compact {
+  margin-top: 18px;
+}
+
 .subtle-pill {
   display: inline-flex;
   align-items: center;
@@ -698,6 +702,76 @@ tr:last-child td {
   margin-bottom: 14px;
 }
 
+.live-water-card {
+  margin-bottom: 14px;
+}
+
+.live-water-card article {
+  background: linear-gradient(135deg, #e9f7fb, #ffffff 58%);
+  border: 1px solid #d4e6ec;
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1.3fr);
+  gap: 16px;
+}
+
+.live-water-hero strong {
+  display: block;
+  font-size: 2.2rem;
+  line-height: 1;
+  margin: 8px 0 10px;
+}
+
+.live-water-hero p,
+.live-water-meta {
+  margin: 0;
+  color: #44525a;
+  line-height: 1.45;
+}
+
+.live-water-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.live-water-stats div {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #dbe7ea;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.live-water-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.live-water-stats strong {
+  color: #203038;
+  font-size: 1rem;
+}
+
+.status-normal {
+  color: #1f7a54 !important;
+}
+
+.status-watch,
+.status-low {
+  color: #b16908 !important;
+}
+
+.status-critical,
+.status-sensor_fault {
+  color: #b12626 !important;
+}
+
 .forecast-card article {
   padding: 16px;
   box-shadow: none;
@@ -784,13 +858,14 @@ tr:last-child td {
   .metrics,
   .cards,
   .planner,
-	  .forecast-card article,
-	  .agent-input-grid,
-	  .language-row,
-	  .query-row,
-	  .transcript-grid {
-	    grid-template-columns: 1fr;
-	  }
+  .forecast-card article,
+  .live-water-card article,
+  .agent-input-grid,
+  .language-row,
+  .query-row,
+  .transcript-grid {
+    grid-template-columns: 1fr;
+  }
 
   .voice-hero-button {
     min-height: 88px;
@@ -807,5 +882,9 @@ tr:last-child td {
 
   .forecast-card small {
     grid-column: auto;
+  }
+
+  .live-water-stats {
+    grid-template-columns: 1fr;
   }
 }

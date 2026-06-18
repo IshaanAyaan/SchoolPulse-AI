@@ -20,6 +20,19 @@ Returns unresolved or needs-verification water alerts.
 
 Use this for Aqualert / LeakListener cards.
 
+The response now also includes:
+
+- `live_sensor` for the newest Arduino ultrasonic reading
+- `live_history` for recent USB-serial readings shown on the dashboard
+
+## `GET /api/water/live`
+
+Returns only the live Arduino feed summary and recent readings.
+
+## `POST /api/water/live`
+
+Accepts one Arduino reading from the local serial bridge and stores it for the dashboard. If `SUPABASE_SYNC_URL` and `SUPABASE_SECRET_KEY` are configured, the backend also forwards the reading into Supabase as a water operations log.
+
 ## `GET /api/waste`
 
 Returns low-confidence or contaminated waste decisions.
@@ -84,4 +97,3 @@ Request:
 ```
 
 Returns the retrieved chunks used by the agent.
-

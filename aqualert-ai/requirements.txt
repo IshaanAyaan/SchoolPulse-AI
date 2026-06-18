@@ -5,6 +5,7 @@
 # pyyaml     - load/validate config.yaml
 # paho-mqtt  - MQTT(TLS) publisher and server-side subscriber
 # flask      - tiny server-side read API (JSON only, no dashboard)
+# pyserial   - laptop USB serial bridge for Arduino UNO -> web backend
 # pytest     - test runner
 #
 # gpiozero / RPi.GPIO are ONLY required on the Raspberry Pi for the real
@@ -17,6 +18,7 @@ scipy>=1.11
 pyyaml>=6.0
 paho-mqtt>=1.6,<3
 flask>=3.0
+pyserial>=3.5
 pytest>=8.0
 
 # --- Raspberry Pi only (install on the Pi): ---

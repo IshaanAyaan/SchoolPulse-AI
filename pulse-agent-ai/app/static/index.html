@@ -140,6 +140,20 @@
             </div>
             <span class="subtle-pill" id="waterTotal">0 gal</span>
           </div>
+          <div class="live-water-card" id="waterLiveCard"></div>
+          <div class="section-heading section-heading-compact">
+            <div>
+              <p class="eyebrow">USB serial feed</p>
+              <h3>Recent ultrasonic readings</h3>
+            </div>
+          </div>
+          <div class="data-table" id="waterLiveTable"></div>
+          <div class="section-heading section-heading-compact">
+            <div>
+              <p class="eyebrow">School logs</p>
+              <h3>Open leak alerts</h3>
+            </div>
+          </div>
           <div class="data-table" id="waterTable"></div>
         </section>
 
@@ -575,7 +589,37 @@
       }
 
       function renderWater(data) {
-        document.getElementById("waterTotal").textContent = `${formatNumber(data.open_gallons_at_risk, 1)} gal`;
+        const live = data.live_sensor;
+        document.getElementById("waterTotal").textContent = live
+          ? `${formatNumber(live.fill_percent, 1)}% full`
+          : `${formatNumber(data.open_gallons_at_risk, 1)} gal`;
+        document.getElementById("waterLiveCard").innerHTML = live
+          ? `<article>
+              <div class="live-water-hero">
+                <span class="eyebrow">Current tank reading</span>
+                <strong>${formatNumber(live.fill_percent, 1)}%</strong>
+                <p>${escapeHtml(live.location)} · ${live.is_live ? "Live" : "Waiting for fresh reading"}</p>
+              </div>
+              <div class="live-water-stats">
+                <div><span>Status</span><strong class="status-${escapeHtml(String(live.status).toLowerCase())}">${escapeHtml(live.status)}</strong></div>
+                <div><span>Distance</span><strong>${formatNumber(live.distance_cm, 2)} cm</strong></div>
+                <div><span>Water depth</span><strong>${formatNumber(live.fill_depth_cm, 2)} cm</strong></div>
+                <div><span>Confidence</span><strong>${Math.round(Number(live.confidence) * 100)}%</strong></div>
+              </div>
+              <p class="live-water-meta">Updated ${new Date(live.recorded_at).toLocaleString()} · ${formatNumber(live.freshness_seconds, 1)}s ago · Open log risk ${formatNumber(data.open_gallons_at_risk, 1)} gal</p>
+            </article>`
+          : `<div class="empty-state">No live Arduino reading yet. Start the serial bridge after uploading the sketch.</div>`;
+        document.getElementById("waterLiveTable").innerHTML = table(
+          [
+            {label: "Time", value: (row) => new Date(row.recorded_at).toLocaleTimeString()},
+            {label: "Fill", value: (row) => `${formatNumber(row.fill_percent, 1)}%`},
+            {label: "Distance", value: (row) => `${formatNumber(row.distance_cm, 2)} cm`},
+            {label: "Spread", value: (row) => `${formatNumber(row.spread_cm || 0, 2)} cm`},
+            {label: "Status", value: (row) => row.status}
+          ],
+          data.live_history || [],
+          "No live ultrasonic readings yet."
+        );
         document.getElementById("waterTable").innerHTML = table(
           [
             {label: "Location", value: (row) => row.location},
@@ -659,6 +703,16 @@
         }
       }
 
+      async function refreshWaterOnly() {
+        try {
+          const water = await getJson("/api/water");
+          state.modules.water = water;
+          renderWater(water);
+        } catch (error) {
+          console.warn("Water refresh failed", error);
+        }
+      }
+
       async function askAgent() {
         const query = document.getElementById("query").value.trim();
         if (!query) return;
@@ -717,6 +771,10 @@
             document.getElementById(button.dataset.panel).classList.add("active-panel");
           });
         });
+      }
+
+      function setupAutoRefresh() {
+        window.setInterval(refreshWaterOnly, 4000);
       }
 
       function setupVoice() {
@@ -814,6 +872,7 @@
       });
 
       setupTabs();
+      setupAutoRefresh();
       setupVoice();
       loadAll();
     </script>

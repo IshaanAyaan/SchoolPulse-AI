@@ -9,6 +9,7 @@ import pandas as pd
 from .config import DATABASE_PATH, MODELS_DIR, SYNTHETIC_DIR
 from .data_normalization import normalize_frame
 from .database import get_connection
+from .water_live import WaterLiveService
 
 
 @dataclass
@@ -25,6 +26,7 @@ class AnalyticsService:
         self.db_path = db_path
         self.energy_model_path = MODELS_DIR / "energy_waste_classifier.joblib"
         self.event_model_path = MODELS_DIR / "event_servings_regressor.joblib"
+        self.water_live = WaterLiveService(db_path)
 
     def _read_table(self, table: str, fallback_csv: str) -> pd.DataFrame:
         if self.db_path.exists():
@@ -102,16 +104,26 @@ class AnalyticsService:
         }
 
     def water_summary(self, water: pd.DataFrame | None = None) -> dict:
+        live_sensor = self.water_live.latest_reading()
+        live_history = self.water_live.recent_readings()
+        live_card = self.water_live.build_action_card(live_sensor)
+        cards = [live_card] if live_card else []
+
         if water is None:
             water = self.load_frames().water
         if water.empty:
-            return {"open_gallons_at_risk": 0, "top_cards": [], "rows": []}
+            return {
+                "open_gallons_at_risk": 0,
+                "top_cards": cards,
+                "rows": [],
+                "live_sensor": live_sensor,
+                "live_history": live_history,
+            }
 
         frame = water.copy()
         open_alerts = frame[frame["status"].isin(["open", "needs_verification"])].copy()
         open_alerts = open_alerts.sort_values(["estimated_gallons", "confidence"], ascending=False)
 
-        cards = []
         for _, row in open_alerts.head(3).iterrows():
             cards.append(
                 {
@@ -131,6 +143,8 @@ class AnalyticsService:
             "open_gallons_at_risk": float(open_alerts["estimated_gallons"].sum()),
             "top_cards": cards,
             "rows": open_alerts.head(10).to_dict(orient="records"),
+            "live_sensor": live_sensor,
+            "live_history": live_history,
         }
 
     def waste_summary(self, waste: pd.DataFrame | None = None) -> dict:
