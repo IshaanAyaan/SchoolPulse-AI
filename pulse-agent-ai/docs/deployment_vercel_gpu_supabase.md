@@ -72,6 +72,27 @@ Check it:
 LLM_API_KEY=<secret shared with Vercel> bash scripts/check_gpu_stack.sh
 ```
 
+Optional voice environment on the A100:
+
+```bash
+mkdir -p ~/.config/schoolprint
+chmod 700 ~/.config/schoolprint
+printf '%s\n' '<elevenlabs-api-key>' > ~/.config/schoolprint/elevenlabs_api_key
+chmod 600 ~/.config/schoolprint/elevenlabs_api_key
+```
+
+`scripts/start_gpu_stack.sh` reads that private file and exposes it only to the FastAPI process as `ELEVENLABS_API_KEY`. The browser never receives the key. You can also override:
+
+```bash
+ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb
+ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
+ELEVENLABS_STT_MODEL=scribe_v2
+```
+
+## Model sizing
+
+The current GPU path runs `google/gemma-4-12B-it` in bf16 because it fits comfortably on an A100 40 GB, leaving room for the API, KV cache, and demo traffic. A larger bf16 model may exceed memory once KV cache is included. A larger quantized model can be tested next, but keep the 12B model as the demo-safe default unless the replacement is verified for latency, multilingual quality, and action-card grounding.
+
 ## Supabase
 
 Install package:

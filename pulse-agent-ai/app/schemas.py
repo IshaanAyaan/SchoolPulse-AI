@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class AgentQuery(BaseModel):
     query: str = Field(..., min_length=2)
     voice_mode: bool = False
+    language: str = Field(default="en-US", min_length=2, max_length=12)
 
 
 class RagSearchQuery(BaseModel):
@@ -31,3 +32,8 @@ class AgentResponse(BaseModel):
     citations: list[dict]
     used_llm: bool
 
+
+class VoiceSpeakRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=4000)
+    language: str = Field(default="en-US", min_length=2, max_length=12)
+    voice_id: str | None = Field(default=None, max_length=80)

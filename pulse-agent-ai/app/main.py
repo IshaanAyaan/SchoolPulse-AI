@@ -2,17 +2,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .agent import PulseAgent
 from .analytics import AnalyticsService
-from .config import ALLOWED_ORIGINS, LLM_BASE_URL, LLM_MODEL, PROJECT_ROOT
+from .config import ALLOWED_ORIGINS, ELEVENLABS_API_KEY, LLM_BASE_URL, LLM_MODEL, PROJECT_ROOT
 from .database import ensure_database
 from .rag import RagRetriever
-from .schemas import AgentQuery, RagSearchQuery
+from .schemas import AgentQuery, RagSearchQuery, VoiceSpeakRequest
+from .voice import ElevenLabsVoiceService
 
 
 app = FastAPI(
@@ -34,6 +35,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 analytics = AnalyticsService()
 agent = PulseAgent()
 rag = RagRetriever()
+voice = ElevenLabsVoiceService()
 
 
 @app.on_event("startup")
@@ -53,6 +55,7 @@ def health() -> dict:
         "service": "pulse-agent-ai",
         "llm_configured": bool(LLM_BASE_URL),
         "llm_model": LLM_MODEL,
+        "voice_configured": bool(ELEVENLABS_API_KEY),
     }
 
 
@@ -84,7 +87,40 @@ def events() -> dict:
 
 @app.post("/api/agent/query")
 def query_agent(payload: AgentQuery) -> dict:
-    return agent.answer(payload.query)
+    return agent.answer(payload.query, language=payload.language)
+
+
+@app.get("/api/voice/status")
+def voice_status() -> dict:
+    return voice.status()
+
+
+@app.post("/api/voice/speak")
+def speak(payload: VoiceSpeakRequest) -> Response:
+    try:
+        audio = voice.speak(payload.text, language=payload.language, voice_id=payload.voice_id)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Voice generation is unavailable.") from exc
+    return Response(content=audio.content, media_type=audio.media_type)
+
+
+@app.post("/api/voice/transcribe")
+async def transcribe_voice(
+    file: UploadFile = File(...),
+    language: str = Query(default="en-US", min_length=2, max_length=12),
+) -> dict:
+    audio_bytes = await file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="No audio received.")
+    try:
+        return voice.transcribe(
+            audio_bytes,
+            filename=file.filename or "voice.webm",
+            content_type=file.content_type or "audio/webm",
+            language=language,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Voice transcription is unavailable.") from exc
 
 
 @app.post("/api/rag/search")

@@ -15,7 +15,19 @@ You help school staff reduce hidden water, energy, food, event, and transportati
 Use retrieved school context and structured analytics.
 Do not pretend a recommendation is certain. Include confidence and a human verification step.
 Do not order purchases, repairs, route changes, or schedule changes without human approval.
-Answer concisely in a school-operations tone."""
+Answer concisely in a school-operations tone.
+Do not use Markdown formatting, asterisks, code fences, or raw JSON in the answer.
+Use short titled sections and plain sentences that can be read aloud."""
+
+
+LANGUAGE_NAMES = {
+    "en-US": "English",
+    "es-US": "Spanish",
+    "hi-IN": "Hindi",
+    "zh-CN": "Simplified Chinese",
+    "ar": "Arabic",
+    "fr-FR": "French",
+}
 
 
 class PulseAgent:
@@ -23,17 +35,17 @@ class PulseAgent:
         self.analytics = AnalyticsService()
         self.rag = RagRetriever()
 
-    def answer(self, query: str) -> dict[str, Any]:
+    def answer(self, query: str, language: str = "en-US") -> dict[str, Any]:
         retrieved = self.rag.search(query, top_k=5)
         overview = self.analytics.overview()
         cards = overview["top_action_cards"]
 
-        llm_answer = self._try_llm(query, retrieved, overview)
+        llm_answer = self._try_llm(query, retrieved, overview, language)
         if llm_answer:
             answer = llm_answer
             used_llm = True
         else:
-            answer = self._fallback_answer(query, retrieved, overview)
+            answer = self._fallback_answer(query, retrieved, overview, language)
             used_llm = False
 
         return {
@@ -50,10 +62,11 @@ class PulseAgent:
             "used_llm": used_llm,
         }
 
-    def _try_llm(self, query: str, retrieved: list[dict], overview: dict) -> str | None:
+    def _try_llm(self, query: str, retrieved: list[dict], overview: dict, language: str) -> str | None:
         if not LLM_BASE_URL:
             return None
 
+        language_name = LANGUAGE_NAMES.get(language, "English")
         context = "\n\n".join(
             f"[{item['title']} | {item['source']}]\n{item['text']}" for item in retrieved
         )
@@ -67,7 +80,10 @@ class PulseAgent:
                         f"Question: {query}\n\n"
                         f"Retrieved context:\n{context}\n\n"
                         f"Current analytics JSON:\n{json.dumps(overview, indent=2)}\n\n"
-                        "Give a concise answer and name the most important next action."
+                        f"Answer in {language_name}. "
+                        "Give a concise answer and name the most important next action. "
+                        "Format with these plain labels only: Highest priority, Why, Next step, Human check. "
+                        "Do not use Markdown, bullets with asterisks, code fences, or raw JSON."
                     ),
                 },
             ],
@@ -91,7 +107,7 @@ class PulseAgent:
         except Exception:
             return None
 
-    def _fallback_answer(self, query: str, retrieved: list[dict], overview: dict) -> str:
+    def _fallback_answer(self, query: str, retrieved: list[dict], overview: dict, language: str) -> str:
         totals = overview["impact_totals"]
         top_card = overview["top_action_cards"][0] if overview["top_action_cards"] else None
         context_note = ""

@@ -261,9 +261,61 @@ h3 {
   gap: 10px;
 }
 
+.agent-input-grid {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.voice-hero-button {
+  min-height: 112px;
+  padding: 16px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  background: var(--teal);
+  color: #ffffff;
+  border: 1px solid #155a56;
+}
+
+.voice-hero-button span {
+  font-size: 1.28rem;
+  line-height: 1.1;
+}
+
+.voice-hero-button small {
+  color: #dcebea;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.voice-hero-button.listening {
+  background: var(--red);
+  border-color: #81342c;
+}
+
+.prompt-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.language-row {
+  display: grid;
+  grid-template-columns: 92px minmax(150px, 220px);
+  gap: 10px;
+  align-items: center;
+}
+
+.language-row label {
+  color: #44525a;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .query-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
 }
 
@@ -367,11 +419,40 @@ h3 {
   text-transform: uppercase;
 }
 
-.transcript-block p {
+.transcript-block p,
+.formatted-answer {
   white-space: pre-wrap;
   line-height: 1.55;
   margin: 0;
   color: #27343a;
+}
+
+.formatted-answer {
+  display: grid;
+  gap: 9px;
+  white-space: normal;
+}
+
+.formatted-answer h4 {
+  margin: 10px 0 0;
+  color: #182126;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.formatted-answer h4:first-child {
+  margin-top: 0;
+}
+
+.formatted-answer p {
+  margin: 0;
+}
+
+.formatted-answer ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 5px;
 }
 
 .copy-status {
@@ -703,10 +784,16 @@ tr:last-child td {
   .metrics,
   .cards,
   .planner,
-  .forecast-card article,
-  .query-row,
-  .transcript-grid {
-    grid-template-columns: 1fr;
+	  .forecast-card article,
+	  .agent-input-grid,
+	  .language-row,
+	  .query-row,
+	  .transcript-grid {
+	    grid-template-columns: 1fr;
+	  }
+
+  .voice-hero-button {
+    min-height: 88px;
   }
 
   .answer-toolbar {

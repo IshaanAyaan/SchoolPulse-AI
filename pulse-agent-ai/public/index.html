@@ -52,10 +52,28 @@
             <h2 id="agentTitle">Ask what to fix next</h2>
           </div>
           <div class="agent-controls">
-            <div class="query-row">
-              <input id="query" value="What should we fix first before Friday volleyball?" aria-label="Ask Pulse Agent" />
-              <button id="voice" class="secondary-button" type="button">Voice</button>
-              <button id="ask" type="button">Ask</button>
+            <div class="agent-input-grid">
+              <button id="voice" class="voice-hero-button" type="button">
+                <span id="voiceLabel">Speak</span>
+                <small id="voiceHint">Tap to talk</small>
+              </button>
+              <div class="prompt-stack">
+                <div class="language-row">
+                  <label for="language">Language</label>
+                  <select id="language">
+                    <option value="en-US">English</option>
+                    <option value="es-US">Spanish</option>
+                    <option value="hi-IN">Hindi</option>
+                    <option value="zh-CN">Chinese</option>
+                    <option value="ar">Arabic</option>
+                    <option value="fr-FR">French</option>
+                  </select>
+                </div>
+                <div class="query-row">
+                  <input id="query" value="What should we fix first before Friday volleyball?" aria-label="Ask Pulse Agent" />
+                  <button id="ask" type="button">Ask</button>
+                </div>
+              </div>
             </div>
             <div class="quick-prompts" aria-label="Example questions">
               <button class="prompt-chip" type="button">Plan a sports event for 250 people</button>
@@ -83,7 +101,7 @@
               </section>
               <section class="transcript-block" aria-labelledby="outputTranscriptLabel">
                 <span id="outputTranscriptLabel">Agent output</span>
-                <p id="answer">Ask Pulse Agent for a ranked action plan.</p>
+                <div id="answer" class="formatted-answer">Ask Pulse Agent for a ranked action plan.</div>
               </section>
             </div>
             <p class="copy-status" id="copyStatus" aria-live="polite"></p>
@@ -176,6 +194,11 @@
         overview: null,
         modules: {},
         recognition: null,
+        mediaRecorder: null,
+        mediaStream: null,
+        recordingChunks: [],
+        currentAudio: null,
+        voiceConfigured: false,
         listening: false,
         lastExchange: null
       };
@@ -186,6 +209,19 @@
         Waste: "tone-waste",
         Events: "tone-events"
       };
+
+      const languageLabels = {
+        "en-US": "English",
+        "es-US": "Spanish",
+        "hi-IN": "Hindi",
+        "zh-CN": "Chinese",
+        ar: "Arabic",
+        "fr-FR": "French"
+      };
+
+      function selectedLanguage() {
+        return document.getElementById("language").value || "en-US";
+      }
 
       async function getJson(url, options) {
         const response = await fetch(url, options);
@@ -221,19 +257,101 @@
         document.getElementById("copyAnswer").disabled = !enabled;
         document.getElementById("copyBrief").disabled = !enabled;
         document.getElementById("speakAnswer").disabled =
-          !enabled || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window);
+          !enabled || (!state.voiceConfigured && !("speechSynthesis" in window));
+      }
+
+      function stripMarkdown(value) {
+        return String(value ?? "")
+          .replace(/\*\*(.*?)\*\*/g, "$1")
+          .replace(/`([^`]*)`/g, "$1")
+          .replace(/^\s*[-*]\s+/gm, "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      }
+
+      function renderAnswer(value) {
+        const rawLines = String(value ?? "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
+        if (!rawLines.length) return "<p>No response yet.</p>";
+        const html = [];
+        let listOpen = false;
+
+        function closeList() {
+          if (listOpen) {
+            html.push("</ul>");
+            listOpen = false;
+          }
+        }
+
+        rawLines.forEach((rawLine) => {
+          let line = rawLine
+            .replace(/\*\*(.*?)\*\*/g, "$1")
+            .replace(/`([^`]*)`/g, "$1")
+            .replace(/^#+\s*/, "")
+            .trim();
+          const bullet = line.match(/^[-*]\s+(.*)$/);
+          if (bullet) {
+            if (!listOpen) {
+              html.push("<ul>");
+              listOpen = true;
+            }
+            html.push(`<li>${escapeHtml(bullet[1])}</li>`);
+            return;
+          }
+
+          closeList();
+          const labeled = line.match(/^(Highest priority|Most important next action|Why|Details|Next step|Human check|Human verification required|Evidence|Estimated impact|Confidence)\s*:\s*(.*)$/i);
+          if (labeled) {
+            html.push(`<h4>${escapeHtml(labeled[1])}</h4>`);
+            if (labeled[2]) html.push(`<p>${escapeHtml(labeled[2])}</p>`);
+          } else {
+            html.push(`<p>${escapeHtml(line)}</p>`);
+          }
+        });
+        closeList();
+        return html.join("");
       }
 
       function setTranscript(query, answerText, kickerText) {
         document.getElementById("inputTranscript").textContent = query || "No prompt sent yet.";
-        document.getElementById("answer").textContent = answerText;
+        document.getElementById("answer").innerHTML = renderAnswer(answerText);
         document.getElementById("answerKicker").textContent = kickerText;
       }
 
-      function speakText(text) {
-        if (!text || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
+      async function speakText(text) {
+        const cleanText = stripMarkdown(text);
+        if (!cleanText) return;
+        if (state.currentAudio) {
+          state.currentAudio.pause();
+          state.currentAudio = null;
+        }
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+
+        if (state.voiceConfigured) {
+          try {
+            const response = await fetch("/api/voice/speak", {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({text: cleanText, language: selectedLanguage()})
+            });
+            if (response.ok) {
+              const blob = await response.blob();
+              const audioUrl = URL.createObjectURL(blob);
+              const audio = new Audio(audioUrl);
+              state.currentAudio = audio;
+              audio.addEventListener("ended", () => URL.revokeObjectURL(audioUrl), {once: true});
+              await audio.play();
+              return;
+            }
+          } catch (error) {
+            // Browser speech is a reliable fallback when the premium voice API is unavailable.
+          }
+        }
+
+        if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = selectedLanguage();
         utterance.rate = 0.98;
         utterance.pitch = 1;
         window.speechSynthesis.speak(utterance);
@@ -289,6 +407,7 @@
           "SchoolPrint Pulse Agent Brief",
           "",
           `Model mode: ${exchange.usedLlm ? "Gemma LLM response" : "deterministic fallback response"}`,
+          `Language: ${languageLabels[exchange.language] || exchange.language || "English"}`,
           "",
           `Input: ${exchange.query}`,
           "",
@@ -445,13 +564,15 @@
       async function loadAll() {
         try {
           setStatus(false, "Loading", "Gemma optional");
-          const [overview, energy, water, waste, events] = await Promise.all([
+          const [overview, energy, water, waste, events, voiceStatus] = await Promise.all([
             getJson("/api/overview"),
             getJson("/api/energy"),
             getJson("/api/water"),
             getJson("/api/waste"),
-            getJson("/api/events")
+            getJson("/api/events"),
+            getJson("/api/voice/status").catch(() => ({configured: false}))
           ]);
+          state.voiceConfigured = Boolean(voiceStatus.configured);
           state.overview = overview;
           state.modules = {energy, water, waste, events};
           renderOverview();
@@ -460,10 +581,11 @@
           renderWaste(waste);
           renderEvents(events);
           await forecastEvent();
-          setStatus(true, "Online", "Local backend");
+          setStatus(true, "Online", state.voiceConfigured ? "Gemma + ElevenLabs" : "Gemma backend");
+          setResponseTools(Boolean(state.lastExchange));
         } catch (error) {
           setStatus(false, "Offline", "Check API");
-          document.getElementById("answer").textContent = error.message;
+          setTranscript("System check", error.message, "Error");
         }
       }
 
@@ -475,14 +597,16 @@
         document.getElementById("copyStatus").textContent = "";
         setResponseTools(false);
         setTranscript(query, "Reading logs and retrieved context...", "Thinking");
+        const language = selectedLanguage();
         try {
           const data = await getJson("/api/agent/query", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({query})
+            body: JSON.stringify({query, language, voice_mode: true})
           });
           state.lastExchange = {
             query,
+            language,
             answer: data.answer,
             usedLlm: data.used_llm,
             actionCards: data.action_cards || [],
@@ -527,36 +651,131 @@
       function setupVoice() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const voiceButton = document.getElementById("voice");
-        if (!SpeechRecognition) {
-          voiceButton.disabled = true;
-          voiceButton.textContent = "No voice";
+
+        function setVoiceButton(label, hint, listening = false) {
+          document.getElementById("voiceLabel").textContent = label;
+          document.getElementById("voiceHint").textContent = hint;
+          voiceButton.classList.toggle("listening", listening);
+        }
+
+        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+        if (recognition) {
+          recognition.lang = selectedLanguage();
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+          recognition.addEventListener("result", (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById("query").value = transcript;
+            setTranscript(transcript, "Voice captured. Sending prompt to Pulse Agent...", "Voice input");
+            askAgent();
+          });
+          recognition.addEventListener("end", () => {
+            state.listening = false;
+            setVoiceButton("Speak", "Tap to talk");
+          });
+          state.recognition = recognition;
+        }
+
+        function startBrowserSpeech() {
+          if (!recognition) {
+            setTranscript("Voice input", "Voice input is unavailable in this browser.", "Error");
+            return;
+          }
+          state.listening = true;
+          recognition.lang = selectedLanguage();
+          setVoiceButton("Listening", "Tap when done", true);
+          setTranscript("Listening...", "Speak your prompt clearly. Pulse Agent will answer here.", "Voice input");
+          recognition.start();
+        }
+
+        async function transcribeRecordedAudio(blob) {
+          const formData = new FormData();
+          formData.append("file", blob, "voice.webm");
+          const response = await fetch(`/api/voice/transcribe?language=${encodeURIComponent(selectedLanguage())}`, {
+            method: "POST",
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error("Voice transcription failed.");
+          }
+          return response.json();
+        }
+
+        async function stopRecording() {
+          if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
+            state.mediaRecorder.stop();
+          }
+        }
+
+        async function startRecording() {
+          state.recordingChunks = [];
+          const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+          state.mediaStream = stream;
+          state.mediaRecorder = new MediaRecorder(stream);
+          state.mediaRecorder.addEventListener("dataavailable", (event) => {
+            if (event.data && event.data.size > 0) state.recordingChunks.push(event.data);
+          });
+          state.mediaRecorder.addEventListener("stop", async () => {
+            stream.getTracks().forEach((track) => track.stop());
+            state.mediaStream = null;
+            state.listening = false;
+            setVoiceButton("Speak", "Processing");
+            try {
+              const blob = new Blob(state.recordingChunks, {type: "audio/webm"});
+              const data = await transcribeRecordedAudio(blob);
+              if (!data.text) throw new Error("No speech detected.");
+              document.getElementById("query").value = data.text;
+              setTranscript(data.text, "Voice captured. Sending prompt to Pulse Agent...", "Voice input");
+              await askAgent();
+            } catch (error) {
+              setTranscript("Voice input", error.message, "Error");
+            } finally {
+              setVoiceButton("Speak", "Tap to talk");
+            }
+          });
+          state.mediaRecorder.start();
+          state.listening = true;
+          setVoiceButton("Listening", "Tap when done", true);
+          setTranscript("Listening...", "Recording with ElevenLabs transcription.", "Voice input");
+        }
+
+        const canRecord = Boolean(navigator.mediaDevices && window.MediaRecorder);
+        if (canRecord) {
+          voiceButton.addEventListener("click", async () => {
+            if (state.listening) {
+              if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
+                await stopRecording();
+              } else if (recognition) {
+                recognition.stop();
+              }
+              return;
+            }
+            if (!state.voiceConfigured) {
+              startBrowserSpeech();
+              return;
+            }
+            try {
+              await startRecording();
+            } catch (error) {
+              setTranscript("Voice input", "Microphone access failed. Use the text box or browser speech fallback.", "Error");
+            }
+          });
           return;
         }
-        const recognition = new SpeechRecognition();
-        recognition.lang = "en-US";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        recognition.addEventListener("result", (event) => {
-          const transcript = event.results[0][0].transcript;
-          document.getElementById("query").value = transcript;
-          setTranscript(transcript, "Voice captured. Sending prompt to Pulse Agent...", "Voice input");
-          askAgent();
-        });
-        recognition.addEventListener("end", () => {
-          state.listening = false;
-          voiceButton.textContent = "Voice";
-        });
+
+        if (!SpeechRecognition) {
+          voiceButton.disabled = true;
+          setVoiceButton("No voice", "Type instead");
+          return;
+        }
+
         voiceButton.addEventListener("click", () => {
           if (state.listening) {
             recognition.stop();
             return;
           }
-          state.listening = true;
-          voiceButton.textContent = "Listening";
-          setTranscript("Listening...", "Speak your prompt clearly. Pulse Agent will answer here.", "Voice input");
-          recognition.start();
+          startBrowserSpeech();
         });
-        state.recognition = recognition;
       }
 
       document.getElementById("refresh").addEventListener("click", loadAll);

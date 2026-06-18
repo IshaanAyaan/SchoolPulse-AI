@@ -38,5 +38,11 @@ LLM_MODEL = os.getenv("LLM_MODEL", "google/gemma-4-12B-it")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "EMPTY")
 ALLOWED_ORIGINS = parse_csv_env("ALLOWED_ORIGINS", "*")
 
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
+ELEVENLABS_API_BASE_URL = os.getenv("ELEVENLABS_API_BASE_URL", "https://api.elevenlabs.io/v1").rstrip("/")
+ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb")
+ELEVENLABS_TTS_MODEL = os.getenv("ELEVENLABS_TTS_MODEL", "eleven_flash_v2_5")
+ELEVENLABS_STT_MODEL = os.getenv("ELEVENLABS_STT_MODEL", "scribe_v2")
+
 SYNTHETIC_DIR = PROJECT_ROOT / "data" / "synthetic"
 MODELS_DIR = PROJECT_ROOT / "models"
