@@ -194,10 +194,8 @@
         overview: null,
         modules: {},
         recognition: null,
-        mediaRecorder: null,
-        mediaStream: null,
-        recordingChunks: [],
         currentAudio: null,
+        currentAudioUrl: null,
         voiceConfigured: false,
         listening: false,
         lastExchange: null
@@ -371,16 +369,25 @@
         document.getElementById("answerKicker").textContent = kickerText;
       }
 
-      async function speakText(text) {
-        const cleanText = stripMarkdown(text);
-        if (!cleanText) return;
+      function stopOutputAudio() {
         if (state.currentAudio) {
           state.currentAudio.pause();
+          state.currentAudio.currentTime = 0;
           state.currentAudio = null;
+        }
+        if (state.currentAudioUrl) {
+          URL.revokeObjectURL(state.currentAudioUrl);
+          state.currentAudioUrl = null;
         }
         if ("speechSynthesis" in window) {
           window.speechSynthesis.cancel();
         }
+      }
+
+      async function speakText(text) {
+        const cleanText = stripMarkdown(text);
+        if (!cleanText) return;
+        stopOutputAudio();
 
         if (state.voiceConfigured) {
           try {
@@ -394,7 +401,16 @@
               const audioUrl = URL.createObjectURL(blob);
               const audio = new Audio(audioUrl);
               state.currentAudio = audio;
-              audio.addEventListener("ended", () => URL.revokeObjectURL(audioUrl), {once: true});
+              state.currentAudioUrl = audioUrl;
+              audio.addEventListener("ended", () => {
+                if (state.currentAudio === audio) {
+                  state.currentAudio = null;
+                }
+                if (state.currentAudioUrl === audioUrl) {
+                  URL.revokeObjectURL(audioUrl);
+                  state.currentAudioUrl = null;
+                }
+              }, {once: true});
               await audio.play();
               return;
             }
@@ -635,7 +651,7 @@
           renderWaste(waste);
           renderEvents(events);
           await forecastEvent();
-          setStatus(true, "Online", state.voiceConfigured ? "Gemma + ElevenLabs" : "Gemma backend");
+          setStatus(true, "Online", state.voiceConfigured ? "Gemma + ElevenLabs output" : "Gemma backend");
           setResponseTools(Boolean(state.lastExchange));
         } catch (error) {
           setStatus(false, "Offline", "Check API");
@@ -646,6 +662,7 @@
       async function askAgent() {
         const query = document.getElementById("query").value.trim();
         if (!query) return;
+        stopOutputAudio();
         const askButton = document.getElementById("ask");
         askButton.disabled = true;
         document.getElementById("copyStatus").textContent = "";
@@ -717,11 +734,23 @@
           recognition.lang = selectedLanguage();
           recognition.interimResults = false;
           recognition.maxAlternatives = 1;
+          recognition.addEventListener("start", () => {
+            state.listening = true;
+            setVoiceButton("Listening", "Tap when done", true);
+          });
           recognition.addEventListener("result", (event) => {
             const transcript = event.results[0][0].transcript;
             document.getElementById("query").value = transcript;
             setTranscript(transcript, "Voice captured. Sending prompt to Pulse Agent...", "Voice input");
             askAgent();
+          });
+          recognition.addEventListener("error", (event) => {
+            state.listening = false;
+            setVoiceButton("Speak", "Tap to talk");
+            const message = event.error === "not-allowed"
+              ? "Microphone access is blocked. Allow mic access and try again."
+              : "Voice input did not come through. Try again or type your question.";
+            setTranscript("Voice input", message, "Error");
           });
           recognition.addEventListener("end", () => {
             state.listening = false;
@@ -735,86 +764,10 @@
             setTranscript("Voice input", "Voice input is unavailable in this browser.", "Error");
             return;
           }
-          state.listening = true;
+          stopOutputAudio();
           recognition.lang = selectedLanguage();
-          setVoiceButton("Listening", "Tap when done", true);
           setTranscript("Listening...", "Speak your prompt clearly. Pulse Agent will answer here.", "Voice input");
           recognition.start();
-        }
-
-        async function transcribeRecordedAudio(blob) {
-          const formData = new FormData();
-          formData.append("file", blob, "voice.webm");
-          const response = await fetch(`/api/voice/transcribe?language=${encodeURIComponent(selectedLanguage())}`, {
-            method: "POST",
-            body: formData
-          });
-          if (!response.ok) {
-            throw new Error("Voice transcription failed.");
-          }
-          return response.json();
-        }
-
-        async function stopRecording() {
-          if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
-            state.mediaRecorder.stop();
-          }
-        }
-
-        async function startRecording() {
-          state.recordingChunks = [];
-          const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-          state.mediaStream = stream;
-          state.mediaRecorder = new MediaRecorder(stream);
-          state.mediaRecorder.addEventListener("dataavailable", (event) => {
-            if (event.data && event.data.size > 0) state.recordingChunks.push(event.data);
-          });
-          state.mediaRecorder.addEventListener("stop", async () => {
-            stream.getTracks().forEach((track) => track.stop());
-            state.mediaStream = null;
-            state.listening = false;
-            setVoiceButton("Speak", "Processing");
-            try {
-              const blob = new Blob(state.recordingChunks, {type: "audio/webm"});
-              const data = await transcribeRecordedAudio(blob);
-              if (!data.text) throw new Error("No speech detected.");
-              document.getElementById("query").value = data.text;
-              setTranscript(data.text, "Voice captured. Sending prompt to Pulse Agent...", "Voice input");
-              await askAgent();
-            } catch (error) {
-              setTranscript("Voice input", error.message, "Error");
-            } finally {
-              setVoiceButton("Speak", "Tap to talk");
-            }
-          });
-          state.mediaRecorder.start();
-          state.listening = true;
-          setVoiceButton("Listening", "Tap when done", true);
-          setTranscript("Listening...", "Recording with ElevenLabs transcription.", "Voice input");
-        }
-
-        const canRecord = Boolean(navigator.mediaDevices && window.MediaRecorder);
-        if (canRecord) {
-          voiceButton.addEventListener("click", async () => {
-            if (state.listening) {
-              if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
-                await stopRecording();
-              } else if (recognition) {
-                recognition.stop();
-              }
-              return;
-            }
-            if (!state.voiceConfigured) {
-              startBrowserSpeech();
-              return;
-            }
-            try {
-              await startRecording();
-            } catch (error) {
-              setTranscript("Voice input", "Microphone access failed. Use the text box or browser speech fallback.", "Error");
-            }
-          });
-          return;
         }
 
         if (!SpeechRecognition) {
@@ -834,6 +787,9 @@
 
       document.getElementById("refresh").addEventListener("click", loadAll);
       document.getElementById("ask").addEventListener("click", askAgent);
+      document.getElementById("query").addEventListener("input", () => {
+        stopOutputAudio();
+      });
       document.getElementById("query").addEventListener("keydown", (event) => {
         if (event.key === "Enter") askAgent();
       });
