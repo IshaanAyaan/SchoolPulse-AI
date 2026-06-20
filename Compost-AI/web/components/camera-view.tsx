@@ -5,6 +5,10 @@ import { SwitchCamera, CameraOff, Loader2 } from "lucide-react";
 
 type Facing = "environment" | "user";
 
+// Fraction of the shorter screen/video dimension used as the scan square.
+// 0.65 = the square covers 65% of the shorter side, centered.
+const SCAN_FRACTION = 0.65;
+
 interface CameraViewProps {
   /** Called with a square JPEG data URL when the user taps capture. */
   onCapture: (dataUrl: string) => void;
@@ -100,9 +104,9 @@ export function CameraView({
     const h = video.videoHeight;
     if (!w || !h) return;
 
-    // Center square crop -> matches the model's square 224x224 input and the
-    // square result frame.
-    const side = Math.min(w, h);
+    // Crop to the scan square (SCAN_FRACTION of the shorter dimension, centered).
+    const outerSide = Math.min(w, h);
+    const side = Math.round(outerSide * SCAN_FRACTION);
     const sx = (w - side) / 2;
     const sy = (h - side) / 2;
 
@@ -125,6 +129,14 @@ export function CameraView({
         className="absolute inset-0 h-full w-full object-cover"
         style={facing === "user" ? { transform: "scaleX(-1)" } : undefined}
       />
+
+      {/* scan square — visual guide; capture crops to this exact region */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div
+          className="border-2 border-white"
+          style={{ width: `${SCAN_FRACTION * 100}vmin`, height: `${SCAN_FRACTION * 100}vmin` }}
+        />
+      </div>
 
       {/* top bar — flip button only */}
       <div className="absolute right-0 top-0 p-5">
