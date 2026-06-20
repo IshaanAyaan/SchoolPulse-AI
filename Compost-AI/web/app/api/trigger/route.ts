@@ -16,6 +16,8 @@ export async function POST() {
 }
 
 export async function GET() {
-  const fired = await redis.getdel(KEY); // atomic get-and-delete
-  return NextResponse.json({ triggered: fired === "1" });
+  // Atomic get-and-delete. @upstash/redis auto-deserializes, so the stored "1"
+  // comes back as the number 1 — check presence (non-null) rather than value.
+  const fired = await redis.getdel(KEY);
+  return NextResponse.json({ triggered: fired != null });
 }
