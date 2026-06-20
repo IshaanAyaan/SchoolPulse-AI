@@ -135,7 +135,6 @@ export default function Home() {
           triggerRef={cameraRef}
           autoCapture={autoCapture}
           onAutoCaptureConsumed={() => setAutoCapture(false)}
-          onNoObject={() => console.debug("[scan] trigger ignored — tray matches empty baseline")}
         />
         {toast ? (
           <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
