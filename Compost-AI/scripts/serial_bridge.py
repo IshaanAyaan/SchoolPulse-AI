@@ -1,18 +1,3 @@
-"""
-serial_bridge.py — bidirectional bridge between the Arduino and the Next.js app.
-
-  Arduino → laptop : ITEM_DETECTED  → POST /api/trigger  (fires camera capture)
-  Laptop  → Arduino: GARBAGE/COMPOST ← GET  /api/servo-command (rotates servo)
-
-Usage:
-    python serial_bridge.py              # defaults: COM3, port 3000
-    python serial_bridge.py COM4
-    python serial_bridge.py COM4 3000
-
-Install deps once:
-    pip install pyserial requests
-"""
-
 import sys
 import time
 import threading
@@ -20,10 +5,6 @@ import serial
 import requests
 
 PORT        = sys.argv[1] if len(sys.argv) > 1 else "COM3"
-# Second arg: full base URL of the Next.js app (Vercel or localhost).
-# Examples:
-#   python serial_bridge.py COM4 https://compost-ai.vercel.app
-#   python serial_bridge.py COM4 http://localhost:3000
 BASE_URL    = sys.argv[2].rstrip("/") if len(sys.argv) > 2 else "http://localhost:3000"
 BAUD        = 9600
 TRIGGER_URL = f"{BASE_URL}/api/trigger"
@@ -34,7 +15,7 @@ def servo_poller(ser: serial.Serial) -> None:
     """Background thread: polls /api/servo-command and writes to Arduino."""
     while True:
         try:
-            r = requests.get(SERVO_URL, timeout=3)
+            r = requests.get(SERVO_URL, timeout=10)
             cmd = r.json().get("command")
             if cmd:
                 print(f"[bridge] servo → {cmd}")
@@ -77,7 +58,7 @@ def main() -> None:
         if line == "ITEM_DETECTED":
             print("[bridge] triggering capture …")
             try:
-                r = requests.post(TRIGGER_URL, timeout=3)
+                r = requests.post(TRIGGER_URL, timeout=10)
                 print(f"[bridge] → {r.status_code}")
             except requests.ConnectionError:
                 print(f"[bridge] WARNING: could not reach {TRIGGER_URL} "
