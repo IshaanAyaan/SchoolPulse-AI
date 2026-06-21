@@ -8,10 +8,6 @@ constexpr unsigned long SAMPLE_INTERVAL_MS = 1500;
 constexpr unsigned long ECHO_TIMEOUT_US = 30000;
 constexpr uint8_t SAMPLE_COUNT = 5;
 
-// Replace these with your real tank calibration values after the first test.
-// FULL_DISTANCE_CM  = sensor-to-water distance when the tank is full.
-// EMPTY_DISTANCE_CM = sensor-to-water distance when the tank is at its lowest
-// normal level right before a refill.
 constexpr float FULL_DISTANCE_CM = 5.0f;
 constexpr float EMPTY_DISTANCE_CM = 18.0f;
 
