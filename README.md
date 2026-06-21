@@ -2,6 +2,10 @@
 
 SchoolPulse AI is a suite of three independent AI tools: **Aqualert AI** (Water Usage), **Compost AI** (Food Waste) and **Pulse AI Agent** (Energy Usgae and Event Forecasting) that helps schools visualize their entire environmental footprint on a unified web dashboard and delivers actionable steps for a school administration to take in order to reduce their substantial environmental footprint through an ElevenLabs voice agent. SchoolPulse AI was built for the USAII Global AI Hackathon 2026.
 
+**Live Dashboard:** https://school-pulse-ai.vercel.app/
+
+<br>
+
 <table>
   <tr>
     <td><img src="https://github.com/user-attachments/assets/c2bcfa97-5aa0-475e-b161-acdd83f60f57" alt="Footprint dashboard with action cards" width="100%"/></td>
@@ -59,7 +63,6 @@ SchoolPulse AI is a suite of three independent AI tools: **Aqualert AI** (Water 
   <img src="https://img.shields.io/badge/-Raspberry_Pi-C51A4A?style=for-the-badge&logo=Raspberry-Pi">
 </p>
 
-<br>
 
 ## System Architecture
 
@@ -130,6 +133,8 @@ Each alert carries a per-day wasted-water estimate as a range, derived from the 
 Compost AI is a smart-bin classifier that sorts waste into either `garbage` or `compost` at the moment of disposal. Once a user throws away an item of waste, an ultrasonic sensor detects its presence and sends a signal to the processing unit to take a picture. The processing unit is a dashboard open on an iPad. The iPad rear-view camera takes a picture of the item and runs inference on a deep convolutional neural network (***EfficientNet-B0 backbone***). 
 
 After the neural network determines which bin the item should be sorted into, a signal is sent to the servo motor to move 60 degrees left if the item is compost or 60 degrees right if the item is classified as garbage. Finally in the dashboard, the user has the option to correct the model if it was wrong. The correct label is stored alongside the image's visual embedding in a correction memory. On future predictions, if a new item is visually similar enough to a previously corrected one, the correction automatically overrides the model's output. 
+
+**Compost AI Live Dashboard:** https://compost-ai.vercel.app/
 
 
 ### Waste Classification Pipeline
