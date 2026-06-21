@@ -1,6 +1,6 @@
 # SchoolPulse AI
 
-SchoolPulse AI is a suite of three independent AI tools: **Aqualert AI** (Water Usage), **Compost AI** (Food Waste) and **Pulse AI Agent** (Energy Loss) that helps schools visualize their entire environmental footprint on a unified web dashboard and delivers actionable steps for a school administration to take in order to reduce their substantially environmental footprint through an ElevenLabs voice agent. School Pulse AI was built for the USAII Global AI Hackathon 2026.
+SchoolPulse AI is a suite of three independent AI tools: **Aqualert AI** (Water Usage), **Compost AI** (Food Waste) and **Pulse AI Agent** (Energy Loss) that helps schools visualize their entire environmental footprint on a unified web dashboard and delivers actionable steps for a school administration to take in order to reduce their substantial environmental footprint through an ElevenLabs voice agent. SchoolPulse AI was built for the USAII Global AI Hackathon 2026.
 
 <table>
   <tr>
@@ -61,10 +61,10 @@ SchoolPulse AI is a suite of three independent AI tools: **Aqualert AI** (Water 
 
 ## Architecture
 
-The SchoolPulse AI collects real data from the readings of Aqualert AI (`water_logs.csv`) and Compost AI (`waste_logs.csv`). It then uses syntehtic data to populate the data for energy consumption within a school (`energy_logs.csv`).  The backend collapses every signal into one comprehensive overview and the dashboard renders it as prioritized action cards with instructions school administration members should follow. The school can also query the voice agent about any questions they have regarding the school's environmental footprint and how they can reduce it. The voice agent uses TF-IDF RAG to query the databses based on `term_frequency` and `inverse_document_frequency` before responding to the users question.   
+The SchoolPulse AI collects real data from the readings of Aqualert AI (`water_logs.csv`) and Compost AI (`waste_logs.csv`). It then uses synthetic data to populate the data for energy consumption within a school (`energy_logs.csv`).  The backend collapses every signal into one comprehensive overview and the dashboard renders it as prioritized action cards with instructions school administration members should follow. The school can also query the voice agent about any questions they have regarding the school's environmental footprint and how they can reduce it. The voice agent uses TF-IDF RAG to query the databases based on `term_frequency` and `inverse_document_frequency` before responding to the user's question.   
 
 ```
-  Aqualert AI (Arudino)        Compost AI (Arudino)      Energy + event logs
+  Aqualert AI (Arduino)        Compost AI (Arduino)      Energy + event logs
   HC-SR04 Ultrasonic            EfficientNet-B0           Synthetic CSV file
         │                           │                           │
         ▼  POST /api/water/live     ▼  POST /api/waste/live      ▼  GET /synthetic/energy_logs.csv
@@ -80,7 +80,7 @@ The SchoolPulse AI collects real data from the readings of Aqualert AI (`water_l
                         
 ```
 
-The system is resilient by design, with **two independent fallback layers** so a the website always renders a message to the user.
+The system is resilient by design, with **two independent fallback layers** so the website always renders a message to the user.
 
 1. **Backend fallback.** When no GPU or LLM endpoint is configured, `PulseAgent` skips the model and composes a deterministic answer directly from simple data analytics queries on the databases using SQLite.
 2. **Frontend fallback.** Every browser call to `/api/*` is wrapped, which means on any failure the dashboard falls back to bundled synthetic JSON in `web/lib/fallback/`, so the charts and tables still populate with the backend fully offline.
@@ -89,7 +89,7 @@ The system is resilient by design, with **two independent fallback layers** so a
 
 ## Aqualert AI (Water Usage)
 
-Aqualert AI detects toilet leaks from the water level inside the tank. It runs a ***linear regression model*** on data collected from an HC-SR04 Ultrasonic sensor. Specifically, the ultrasonic sensor echose 7 times every 60 seconds, which collects distance measurements of the water level in the tank. It then plots each data point on a graph and draws a line of best fit using linear regression. If the water level decline (linear regression line of best fit) is below the set threshold, the model determines the toilet is leaking and sends an alert to the dashboard, which appears as a High Action Priority Card.
+Aqualert AI detects toilet leaks from the water level inside the tank. It runs a ***linear regression model*** on data collected from an HC-SR04 Ultrasonic sensor. Specifically, the ultrasonic sensor echoes 7 times every 60 seconds, which collects distance measurements of the water level in the tank. It then plots each data point on a graph and draws a line of best fit using linear regression. If the water level decline (linear regression line of best fit) is below the set threshold, the model determines the toilet is leaking and sends an alert to the dashboard, which appears as a High Action Priority Card.
 
 ### System Design 
 **A. Sensing.** An HC-SR04 ultrasonic sensor powered by a Raspberry Pi 0 measures the distance to the water surface and streams the readings over a USB serial at `115200 baud` as JSON lines, which a bridge forwards to the live csv file, which is then populated onto the database. 
@@ -126,7 +126,7 @@ Compost AI is a smart-bin classifier that sorts waste into either `garbage` or `
 
 - **Software:** A CNN that can take an image of the waste items as input and determine if it belongs in either the garbage, recycling and compost.
 
-- **Hardware:** A Raspberry Pi 4 to run model inference + camera module capture images of the inputted waste item + a container with three bins to hold sorted waste +ultrasonic sensor to detect when bin is full + 3 servo motors.
+- **Hardware:** A Raspberry Pi 4 to run model inference + camera module capture images of the inputted waste item + a container with three bins to hold sorted waste + ultrasonic sensor to detect when bin is full + 3 servo motors.
 
 ### Classification Pipeline
 
@@ -140,7 +140,7 @@ The model predicts a fine-grained class, then maps it to a disposal pathway. The
 | Fine-grained accuracy (30-way) | **87.60%** |
 | Quantized TFLite for deployment | **~92%** |
 
-Predictions below a **0.65** confidence threshold are flagged in the dashboard for a human reviewer, and a Grad-CAM overlay shows which pixels drove the decision. Finally a reinforcment agent takes feedback from the user and stores that feedback into memory. After multiple iterations, the agent is trained to fix its mistakes on items it commonly misidentifies. 
+Predictions below a **0.65** confidence threshold are flagged in the dashboard for a human reviewer, and a Grad-CAM overlay shows which pixels drove the decision. Finally a reinforcement agent takes feedback from the user and stores that feedback into memory. After multiple iterations, the agent is trained to fix its mistakes on items it commonly misidentifies. 
 
 <br> 
 
@@ -168,7 +168,7 @@ The dashboard needs only a handful of endpoints:
 ### Features
 
 1. **Unified footprint dashboard.** Water, food, and energy waste in one black-and-white interface, with red reserved strictly for critical alerts.
-2. **Voice agent.** Google Gemini VoiceAgent built on top of Gemna and ElevelLabs API
+2. **Voice agent.** Google Gemini VoiceAgent built on top of Gemma and ElevenLabs API
 3. **Human-checkable action cards.** Every insight ships with evidence, a confidence score, an estimated impact, and the exact human verification step before anyone acts.
 4. **Live edge feeds.** The water and food tables poll the real sensor endpoints and surface new leaks and low-confidence sorts as they arrive.
 5. **Event forecasting.** Estimate servings, energy, and waste for an upcoming event from past event history.
